@@ -13,7 +13,25 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # This ensures we get the full git history for path filtering
       
+      - name: Check if jd.ip was changed
+        id: check-jd
+        run: |
+          # Check if jd.ip was modified in the recent push
+          if git diff --name-only HEAD^ HEAD | grep -q 'data/jd.ip'; then
+            echo "jd_ip_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "jd_ip_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Exit if jd.ip wasn't changed
+        if: steps.check-jd.outputs.jd_ip_changed == 'false' && github.event_name == 'push'
+        run: |
+          echo "jd.ip wasn't changed - exiting workflow"
+          exit 0
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -42,7 +60,7 @@ jobs:
           
           # Delete .py files from Code folder (except main.py)
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -not -name "main.py" -type f -delete
             echo "Deleted .py files from Code folder"
           fi
 
