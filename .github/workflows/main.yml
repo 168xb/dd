@@ -14,17 +14,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check if jd.ip exists
-        id: check_file
-        run: |
-          if [ -f "data/jd.ip" ]; then
-            echo "::set-output name=exists::true"
-          else
-            echo "::set-output name=exists::false"
-            echo "File data/jd.ip not found, exiting..."
-            exit 1
-          fi
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -45,15 +34,9 @@ jobs:
 
       - name: Clean up current repository files
         run: |
-          # Delete .ip files from data folder
-          if [ -d "$GITHUB_WORKSPACE/data" ]; then
-            find "$GITHUB_WORKSPACE/data" -name "*.ip" -type f -delete
-            echo "Deleted .ip files from data folder"
-          fi
-          
           # Delete .py files from Code folder (except main.py)
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" -not -name "main.py" -type f -delete
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
             echo "Deleted .py files from Code folder"
           fi
 
@@ -61,9 +44,9 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add data/ Code/
-          git commit -m "Update the file" || echo "No changes to commit"
-          git push || echo "Nothing to push"
+          git add Code/
+          git commit -m "Update the file"
+          git push
 
       - name: Checkout target repository
         uses: actions/checkout@v3
@@ -77,7 +60,7 @@ jobs:
           # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
           # Copy all txt files from source to target
-          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/ || echo "No files to copy"
+          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
           echo "Files copied to target repository"
 
       - name: Commit and push to target repository
@@ -86,5 +69,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add itv/
-          git commit -m "Update multicast source files" || echo "No changes to commit"
-          git push || echo "Nothing to push"
+          git commit -m "Update multicast source files"
+          git push
