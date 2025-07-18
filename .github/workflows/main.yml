@@ -3,52 +3,36 @@ name: Update
 on:
   push:
     paths:
-      - 'data/*.ip'
+      - 'data/jd.ip'
   workflow_dispatch:
 
 jobs:
-  process-and-update:
+  build:
     runs-on: ubuntu-latest
-    
-    steps:
-      # First check current repository
-      - name: Checkout source repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2  # Needed to detect file changes
-      
-      # Debug step to show changed files
-      - name: Debug changed files
-        run: |
-          echo "Detected changed files:"
-          git diff --name-only HEAD^ HEAD
-          echo "Data folder changes:"
-          git diff --name-only HEAD^ HEAD -- 'data/*.ip'
 
-      # Set up Python environment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12.3'
 
-      # Install dependencies
       - name: Install dependencies
         run: pip install selenium requests futures eventlet aiohttp aiofiles asyncio
 
-      # Create output directory
-      - name: Create output directory
+      - name: Create directory
         run: |
           mkdir -p ${{ github.workspace }}/txt
-          echo "Output directory created"
+          echo "Directories created"
 
-      # Run the main script
-      - name: Run main script
+      - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
-          ls -l ${{ github.workspace }}/txt  # Check generated files
+          ls -l  # Check the generated file
 
-      # Clean up current repository
-      - name: Clean up current repository
+      - name: Clean up current repository files
         run: |
           # Delete .ip files from data folder
           if [ -d "$GITHUB_WORKSPACE/data" ]; then
@@ -58,49 +42,38 @@ jobs:
           
           # Delete .py files from Code folder (except main.py)
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" ! -name "main.py" -type f -delete
-            echo "Deleted .py files from Code folder (except main.py)"
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
+            echo "Deleted .py files from Code folder"
           fi
 
-      # Commit cleanup changes to current repository
-      - name: Commit cleanup changes
+      - name: Commit cleanup changes to current repository
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add data/ Code/
-          git commit -m "Clean up after processing" || echo "No changes to commit"
+          git commit -m "Update the file"
           git push
 
-      # Checkout target repository
       - name: Checkout target repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           repository: 168xb/jd
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           path: target-repo
 
-      # Copy files to target repository
-      - name: Copy files to target repository
+      - name: Copy TXT files to target repository
         run: |
           # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
           # Copy all txt files from source to target
-          if [ -d "$GITHUB_WORKSPACE/txt" ]; then
-            cp -v $GITHUB_WORKSPACE/txt/* target-repo/itv/ || echo "No files to copy"
-          else
-            echo "No txt directory found"
-          fi
+          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
+          echo "Files copied to target repository"
 
-      # Commit and push to target repository
-      - name: Update target repository
+      - name: Commit and push to target repository
         run: |
           cd target-repo
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add itv/
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update multicast source files [auto]"
-            git push
-          fi
+          git commit -m "Update multicast source files"
+          git push
