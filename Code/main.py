@@ -219,12 +219,12 @@ def save_results(results):
     results.sort(key=lambda x: channel_key(x[0]))
     
     # 保存速度结果
-    with open("speed_results.txt", 'w', encoding='utf-8') as file:
+    with open("txt/speed_results.txt", 'w', encoding='utf-8') as file:
         for result in results:
             file.write(f"{result[0]},{result[1]},{result[2]}\n")
     
     # 保存分类频道列表
-    with open("itvlist.txt", 'w', encoding='utf-8') as file:
+    with open("txt/itvlist.txt", 'w', encoding='utf-8') as file:
         # 央视频道
         file.write('央视频道,#genre#\n')
         cctv_counter = defaultdict(int)
