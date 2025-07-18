@@ -21,24 +21,31 @@ jobs:
       - name: Install dependencies
         run: pip install selenium requests futures eventlet aiohttp aiofiles asyncio
 
-      - name: Run ip
-        run: |
-          python ${{ github.workspace }}/Code/ips.py
-
       - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
           ls -l  # 检查生成的文件
 
-      - name: 提交更改
+      - name: Checkout target repository
+        uses: actions/checkout@v3
+        with:
+          repository: jk1818/zb
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: target-repo
+
+      - name: Copy TXT files to target repository
         run: |
-          git config --local user.email "ssili@126.com"
-          git config --local user.name "ssili126"
-          git add .
-          # 检查是否有文件变化，有变化才提交
-          if [ -n "$(git status --porcelain)" ]; then
-            git commit -m "自动更新 .txt 文件"
-            git push
-          else
-            echo "没有文件变化，跳过提交"
-          fi
+          # Create itv directory if it doesn't exist
+          mkdir -p target-repo/itv
+          # Copy all txt files from source to target
+          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
+          echo "Files copied to target repository"
+
+      - name: Commit and push to target repository
+        run: |
+          cd target-repo
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add itv/
+          git commit -m "Update multicast source files"
+          git push
