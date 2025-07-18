@@ -2,7 +2,8 @@ name: Update
 
 on:
   push:
-    branches: [ main ]  # or your default branch name
+    paths:
+      - 'data/jd.ip'
   workflow_dispatch:
 
 jobs:
@@ -26,7 +27,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/txt
           echo "Directories created"
 
-      - name: Run main program
+      - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
           ls -l  # Check the generated file
@@ -50,11 +51,11 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add data/ Code/
-          git commit -m "Clean up files after update" || echo "No changes to commit"
-          git push || echo "Nothing to push"
+          git commit -m "Update the file"
+          git push
 
       - name: Checkout target repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           repository: 168xb/jd
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
@@ -65,12 +66,8 @@ jobs:
           # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
           # Copy all txt files from source to target
-          if [ -d "$GITHUB_WORKSPACE/txt" ]; then
-            cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
-            echo "Files copied to target repository"
-          else
-            echo "No txt files found to copy"
-          fi
+          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
+          echo "Files copied to target repository"
 
       - name: Commit and push to target repository
         run: |
@@ -78,5 +75,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add itv/
-          git commit -m "Update multicast source files" || echo "No changes to commit"
-          git push || echo "Nothing to push"
+          git commit -m "Update multicast source files"
+          git push
