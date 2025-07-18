@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 获取所有提交历史以确保检测文件变化
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,26 +27,12 @@ jobs:
           mkdir -p ${{ github.workspace }}/txt
           echo "Directories created"
 
-      - name: Check if jd.ip changed
-        id: check-changes
-        run: |
-          # 检查data/jd.ip是否有变化
-          if git diff --name-only HEAD^ HEAD | grep -q 'data/jd.ip'; then
-            echo "jd.ip has changed"
-            echo "run_workflow=true" >> $GITHUB_OUTPUT
-          else
-            echo "jd.ip has not changed"
-            echo "run_workflow=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Run cctv (if changes detected)
-        if: steps.check-changes.outputs.run_workflow == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
           ls -l  # Check the generated file
 
-      - name: Clean up current repository files (if changes detected)
-        if: steps.check-changes.outputs.run_workflow == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Clean up current repository files
         run: |
           # Delete .ip files from data folder
           if [ -d "$GITHUB_WORKSPACE/data" ]; then
@@ -58,12 +42,11 @@ jobs:
           
           # Delete .py files from Code folder (except main.py)
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" -not -name "main.py" -type f -delete
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
             echo "Deleted .py files from Code folder"
           fi
 
-      - name: Commit cleanup changes to current repository (if changes detected)
-        if: steps.check-changes.outputs.run_workflow == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Commit cleanup changes to current repository
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -71,16 +54,14 @@ jobs:
           git commit -m "Update the file"
           git push
 
-      - name: Checkout target repository (if changes detected)
-        if: steps.check-changes.outputs.run_workflow == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Checkout target repository
         uses: actions/checkout@v3
         with:
           repository: 168xb/jd
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           path: target-repo
 
-      - name: Copy TXT files to target repository (if changes detected)
-        if: steps.check-changes.outputs.run_workflow == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Copy TXT files to target repository
         run: |
           # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
@@ -88,8 +69,7 @@ jobs:
           cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
           echo "Files copied to target repository"
 
-      - name: Commit and push to target repository (if changes detected)
-        if: steps.check-changes.outputs.run_workflow == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Commit and push to target repository
         run: |
           cd target-repo
           git config --local user.email "action@github.com"
