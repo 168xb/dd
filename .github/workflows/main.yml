@@ -1,39 +1,12 @@
-name: Update JD Files
+name: Update
 
 on:
-  push:
-    paths:
-      - 'data/jd.ip'
+  schedule:
+    - cron: '50 1,10 * * *'
   workflow_dispatch:
 
 jobs:
-  check-files:
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.check.outputs.match }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Check for jd.ip changes
-        id: check
-        run: |
-          changed_files=$(git diff --name-only HEAD^ HEAD)
-          echo "Changed files: $changed_files"
-          
-          if echo "$changed_files" | grep -q 'data/jd\.ip'; then
-            echo "Detected jd.ip changes"
-            echo "match=true" >> $GITHUB_OUTPUT
-          else
-            echo "No jd.ip changes detected"
-            echo "match=false" >> $GITHUB_OUTPUT
-          fi
-
-  update-files:
-    needs: check-files
-    if: needs.check-files.outputs.should_run == 'true'
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -53,7 +26,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/txt
           echo "Directories created"
 
-      - name: Run main script
+      - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
           ls -l  # Check the generated file
@@ -72,16 +45,16 @@ jobs:
             echo "Deleted .py files from Code folder"
           fi
 
-      - name: Commit cleanup changes
+      - name: Commit cleanup changes to current repository
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add data/ Code/
-          git commit -m "Clean up files after update"
+          git commit -m "Update the file"
           git push
 
       - name: Checkout target repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           repository: 168xb/jd
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
@@ -92,7 +65,7 @@ jobs:
           # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
           # Copy all txt files from source to target
-          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/ || echo "No files to copy"
+          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
           echo "Files copied to target repository"
 
       - name: Commit and push to target repository
