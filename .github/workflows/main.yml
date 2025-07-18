@@ -1,8 +1,9 @@
 name: Update
 
 on:
-  schedule:
-    - cron: '10 1,8 * * *'
+  push:
+    paths:
+      - 'data/*.ip'
   workflow_dispatch:
 
 jobs:
