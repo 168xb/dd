@@ -29,28 +29,28 @@ jobs:
       - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
-          ls -l  # 检查生成的文件
+          ls -l  # Check the generated file
 
-      - name: Delete .ip files from data folder and .py files from Code folder
+      - name: Clean up current repository files
         run: |
-          # Delete all .ip files in data folder
+          # Delete .ip files from data folder
           if [ -d "$GITHUB_WORKSPACE/data" ]; then
             find "$GITHUB_WORKSPACE/data" -name "*.ip" -type f -delete
             echo "Deleted .ip files from data folder"
           fi
           
-          # Delete all .py files in Code folder (except main.py if needed)
+          # Delete .py files from Code folder (except main.py)
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
-            echo "Deleted .py files from Code folder"
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" ! -name "main.py" -type f -delete
+            echo "Deleted .py files from Code folder (except main.py)"
           fi
 
-      - name: Commit and push changes to current repository
+      - name: Commit cleanup changes to current repository
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add .
-          git commit -m "Clean up: removed processed .ip and .py files" || echo "No changes to commit"
+          git add data/ Code/
+          git commit -m "Clean up: remove temporary files" || echo "No changes to commit"
           git push
 
       - name: Checkout target repository
