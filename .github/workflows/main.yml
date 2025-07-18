@@ -29,7 +29,21 @@ jobs:
       - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
-          ls -l  # 检查生成的文件
+          ls -l  # Check the generated file
+
+      - name: Clean up old data
+        run: |
+          # Delete the .py files in the Code directory
+          if [ -d "${{ github.workspace }}/Code" ]; then
+            find ${{ github.workspace }}/Code -name "*.py" -type f -delete
+            echo "The .py files in the Code directory"
+          fi
+          
+          # Delete the .ip files in the data directory
+          if [ -d "${{ github.workspace }}/data" ]; then
+            find ${{ github.workspace }}/data -name "*.ip" -type f -delete
+            echo "The .ip files in the data directory"
+          fi
 
       - name: Checkout target repository
         uses: actions/checkout@v3
