@@ -3,7 +3,7 @@ name: Update
 on:
   push:
     paths:
-      - 'data/*.ip'
+      - 'data/jd.ip'
   workflow_dispatch:
 
 jobs:
