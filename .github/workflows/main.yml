@@ -41,8 +41,8 @@ jobs:
           
           # Delete .py files from Code folder (except main.py)
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" ! -name "main.py" -type f -delete
-            echo "Deleted .py files from Code folder (except main.py)"
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
+            echo "Deleted .py files from Code folder"
           fi
 
       - name: Commit cleanup changes to current repository
@@ -50,7 +50,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add data/ Code/
-          git commit -m "Clean up: remove temporary files" || echo "No changes to commit"
+          git commit -m "Update the file"
           git push
 
       - name: Checkout target repository
