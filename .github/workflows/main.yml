@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # 使用 checkout@v4（最新版）
+        uses: actions/checkout@v4
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,13 +31,27 @@ jobs:
           python ${{ github.workspace }}/Code/main.py
           ls -l  # 检查生成的文件
 
-      - name: Clean up data folder
+      - name: Delete .ip files from data folder and .py files from Code folder
         run: |
           # Delete all .ip files in data folder
-          find ${{ github.workspace }}/data -name "*.ip" -type f -delete
-          # Delete all .py files in data folder
-          find ${{ github.workspace }}/data -name "*.py" -type f -delete
-          echo "Cleaned up data folder"
+          if [ -d "$GITHUB_WORKSPACE/data" ]; then
+            find "$GITHUB_WORKSPACE/data" -name "*.ip" -type f -delete
+            echo "Deleted .ip files from data folder"
+          fi
+          
+          # Delete all .py files in Code folder (except main.py if needed)
+          if [ -d "$GITHUB_WORKSPACE/Code" ]; then
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
+            echo "Deleted .py files from Code folder"
+          fi
+
+      - name: Commit and push changes to current repository
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Clean up: removed processed .ip and .py files" || echo "No changes to commit"
+          git push
 
       - name: Checkout target repository
         uses: actions/checkout@v3
