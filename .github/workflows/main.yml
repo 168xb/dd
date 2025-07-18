@@ -2,8 +2,7 @@ name: Update
 
 on:
   push:
-    paths:
-      - 'data/jd.ip'
+    branches: [ main ]  # or your default branch name
   workflow_dispatch:
 
 jobs:
@@ -11,41 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 第一步：深度检出代码（包含完整git历史）
-      - name: Checkout code with full history
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 关键修复：获取完整提交历史以支持路径过滤
-
-      # 第二步：添加详细调试信息
-      - name: Debug changed files
-        run: |
-          echo "=== 打印所有变更文件 ==="
-          git diff --name-only HEAD^ HEAD
-          echo "=== 检查jd.ip是否在变更列表中 ==="
-          git diff --name-only HEAD^ HEAD | grep 'data/jd.ip' || echo "未检测到jd.ip变更"
-
-      # 第三步：显式检查jd.ip变更
-      - name: Verify jd.ip change
-        id: check_jd
-        run: |
-          if git diff --name-only HEAD^ HEAD | grep -q 'data/jd.ip'; then
-            echo "::notice::检测到jd.ip变更"
-            echo "jd_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "::warning::未检测到jd.ip变更"
-            echo "jd_changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      # 第四步：如果是push事件且无变更，则跳过（保留手动触发）
-      - name: Skip if no changes (push event)
-        if: steps.check_jd.outputs.jd_changed == 'false' && github.event_name == 'push'
-        run: |
-          echo "::warning::因jd.ip无变更而跳过工作流"
-          exit 0
-
-      # 以下是正常执行流程 ▼▼▼
-
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -57,42 +24,59 @@ jobs:
       - name: Create directory
         run: |
           mkdir -p ${{ github.workspace }}/txt
-          echo "目录已创建"
+          echo "Directories created"
 
-      - name: Run main script
+      - name: Run main program
         run: |
           python ${{ github.workspace }}/Code/main.py
-          ls -l txt/  # 验证输出文件
+          ls -l  # Check the generated file
 
-      - name: Cleanup repository
+      - name: Clean up current repository files
         run: |
-          # 保留main.py的清理逻辑
-          find "$GITHUB_WORKSPACE/Code" -name "*.py" ! -name "main.py" -delete
-          find "$GITHUB_WORKSPACE/data" -name "*.ip" -delete
-          echo "清理完成"
+          # Delete .ip files from data folder
+          if [ -d "$GITHUB_WORKSPACE/data" ]; then
+            find "$GITHUB_WORKSPACE/data" -name "*.ip" -type f -delete
+            echo "Deleted .ip files from data folder"
+          fi
+          
+          # Delete .py files from Code folder (except main.py)
+          if [ -d "$GITHUB_WORKSPACE/Code" ]; then
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
+            echo "Deleted .py files from Code folder"
+          fi
 
-      - name: Commit cleanup
+      - name: Commit cleanup changes to current repository
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add .
-          git commit -m "自动清理工作文件" || echo "无变更可提交"
-          git push
+          git add data/ Code/
+          git commit -m "Clean up files after update" || echo "No changes to commit"
+          git push || echo "Nothing to push"
 
-      - name: Deploy to target repo
+      - name: Checkout target repository
         uses: actions/checkout@v4
         with:
           repository: 168xb/jd
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          path: deploy-target
+          path: target-repo
 
-      - name: Sync files
+      - name: Copy TXT files to target repository
         run: |
-          mkdir -p deploy-target/itv
-          cp -v $GITHUB_WORKSPACE/txt/* deploy-target/itv/
-          cd deploy-target
-          git add .
-          git config user.email "action@github.com"
-          git config user.name "GitHub Action"
-          git commit -m "自动更新: $(date +'%Y-%m-%d %H:%M:%S')"
-          git push
+          # Create itv directory if it doesn't exist
+          mkdir -p target-repo/itv
+          # Copy all txt files from source to target
+          if [ -d "$GITHUB_WORKSPACE/txt" ]; then
+            cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
+            echo "Files copied to target repository"
+          else
+            echo "No txt files found to copy"
+          fi
+
+      - name: Commit and push to target repository
+        run: |
+          cd target-repo
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add itv/
+          git commit -m "Update multicast source files" || echo "No changes to commit"
+          git push || echo "Nothing to push"
