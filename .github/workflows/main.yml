@@ -21,6 +21,11 @@ jobs:
       - name: Install dependencies
         run: pip install selenium requests futures eventlet aiohttp aiofiles asyncio
 
+      - name: Create directory
+        run: |
+          mkdir -p ${{ github.workspace }}/txt
+          echo "Directories created"
+
       - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
