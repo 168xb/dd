@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # 使用 checkout@v4（最新版）
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,25 +29,15 @@ jobs:
       - name: Run cctv
         run: |
           python ${{ github.workspace }}/Code/main.py
-          ls -l  # Check the generated file
+          ls -l  # 检查生成的文件
 
-      - name: Clean up old data
+      - name: Clean up data folder
         run: |
-          # Delete the .py files in the Code directory
-          if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
-            echo "Deleted .py files in the Code directory"
-          else
-            echo "Code directory not found at $GITHUB_WORKSPACE/Code"
-          fi
-          
-          # Delete the .ip files in the data directory
-          if [ -d "$GITHUB_WORKSPACE/data" ]; then
-            find "$GITHUB_WORKSPACE/data" -name "*.ip" -type f -delete
-            echo "Deleted .ip files in the data directory"
-          else
-            echo "Data directory not found at $GITHUB_WORKSPACE/data"
-          fi
+          # Delete all .ip files in data folder
+          find ${{ github.workspace }}/data -name "*.ip" -type f -delete
+          # Delete all .py files in data folder
+          find ${{ github.workspace }}/data -name "*.py" -type f -delete
+          echo "Cleaned up data folder"
 
       - name: Checkout target repository
         uses: actions/checkout@v3
@@ -61,12 +51,8 @@ jobs:
           # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
           # Copy all txt files from source to target
-          if [ -d "$GITHUB_WORKSPACE/txt" ]; then
-            cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
-            echo "Files copied to target repository"
-          else
-            echo "txt directory not found at $GITHUB_WORKSPACE/txt"
-          fi
+          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
+          echo "Files copied to target repository"
 
       - name: Commit and push to target repository
         run: |
