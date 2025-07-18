@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # 使用 checkout@v4（最新版）
+        uses: actions/checkout@v4
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,15 +34,19 @@ jobs:
       - name: Clean up old data
         run: |
           # Delete the .py files in the Code directory
-          if [ -d "${{ github.workspace }}/Code" ]; then
-            find ${{ github.workspace }}/Code -name "*.py" -type f -delete
-            echo "The .py files in the Code directory"
+          if [ -d "$GITHUB_WORKSPACE/Code" ]; then
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
+            echo "Deleted .py files in the Code directory"
+          else
+            echo "Code directory not found at $GITHUB_WORKSPACE/Code"
           fi
           
           # Delete the .ip files in the data directory
-          if [ -d "${{ github.workspace }}/data" ]; then
-            find ${{ github.workspace }}/data -name "*.ip" -type f -delete
-            echo "The .ip files in the data directory"
+          if [ -d "$GITHUB_WORKSPACE/data" ]; then
+            find "$GITHUB_WORKSPACE/data" -name "*.ip" -type f -delete
+            echo "Deleted .ip files in the data directory"
+          else
+            echo "Data directory not found at $GITHUB_WORKSPACE/data"
           fi
 
       - name: Checkout target repository
@@ -57,8 +61,12 @@ jobs:
           # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
           # Copy all txt files from source to target
-          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
-          echo "Files copied to target repository"
+          if [ -d "$GITHUB_WORKSPACE/txt" ]; then
+            cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
+            echo "Files copied to target repository"
+          else
+            echo "txt directory not found at $GITHUB_WORKSPACE/txt"
+          fi
 
       - name: Commit and push to target repository
         run: |
