@@ -3,8 +3,26 @@ name: Update
 on:
   push:
     paths:
-      - 'data/jd.ip'
+      - 'data/*.ip'
   workflow_dispatch:
+
+jobs:
+  merge-channels:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2  # 需要获取足够的历史记录来检测文件变化
+    
+    # 调试步骤：显示变更的文件
+    - name: Debug changed files
+      run: |
+        echo "检测到变化的文件："
+        git diff --name-only HEAD^ HEAD
+        echo "data文件夹变化："
+        git diff --name-only HEAD^ HEAD -- 'data/*.ip'
 
 jobs:
   build:
