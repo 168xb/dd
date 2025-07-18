@@ -13,20 +13,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 确保获取完整的提交历史，以便检测文件变化
       
-      - name: Verify file changes
-        run: |
-          echo "Checking changed files..."
-          git diff --name-only HEAD^ HEAD
-          echo "Checking if jd.ip was modified..."
-          if git diff --name-only HEAD^ HEAD | grep -q 'data/jd.ip'; then
-            echo "jd.ip was modified"
-          else
-            echo "jd.ip was not modified"
-          fi
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -64,11 +51,11 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add data/ Code/
-          git commit -m "Clean up after update" || echo "No changes to commit"
+          git commit -m "Update the file"
           git push
 
       - name: Checkout target repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           repository: 168xb/jd
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
@@ -79,9 +66,7 @@ jobs:
           # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
           # Copy all txt files from source to target
-          if [ -d "$GITHUB_WORKSPACE/txt" ]; then
-            cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/ || echo "No files to copy"
-          fi
+          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
           echo "Files copied to target repository"
 
       - name: Commit and push to target repository
@@ -90,5 +75,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add itv/
-          git commit -m "Update multicast source files" || echo "No changes to commit"
+          git commit -m "Update multicast source files"
           git push
