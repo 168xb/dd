@@ -1,18 +1,18 @@
-name: Update
+name: Update IP Sources
 
 on:
   push:
     paths:
-      - 'Code/**'  # Trigger when files in Code directory are pushed
-      - 'data/**'   # Or any other paths you want to monitor
+      - 'Code/**'
+      - 'data/**'
   workflow_dispatch:
 
 jobs:
-  build:
+  update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout source repository
         uses: actions/checkout@v4
       
       - name: Set up Python
@@ -23,17 +23,17 @@ jobs:
       - name: Install dependencies
         run: pip install selenium requests futures eventlet aiohttp aiofiles asyncio
 
-      - name: Create directory
+      - name: Create output directory
         run: |
           mkdir -p ${{ github.workspace }}/txt
-          echo "Directories created"
+          echo "Output directory created"
 
-      - name: Run cctv
+      - name: Run main script
         run: |
           python ${{ github.workspace }}/Code/main.py
-          ls -l  # Check the generated file
+          ls -l txt/  # Verify output files
 
-      - name: Clean up current repository files
+      - name: Clean up source files
         run: |
           # Delete .ip files from data folder
           if [ -d "$GITHUB_WORKSPACE/data" ]; then
@@ -47,28 +47,28 @@ jobs:
             echo "Deleted .py files from Code folder"
           fi
 
-      - name: Commit cleanup changes to current repository
+      - name: Commit source repository changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add data/ Code/
-          git commit -m "Update the file"
+          git add .
+          git commit -m "🔄 Update IP [skip ci]"
           git push
 
       - name: Checkout target repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 168xb/jd
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           path: target-repo
 
-      - name: Copy TXT files to target repository
+      - name: Copy output files to target repository
         run: |
-          # Create itv directory if it doesn't exist
           mkdir -p target-repo/itv
-          # Copy all txt files from source to target
-          cp -r $GITHUB_WORKSPACE/txt/* target-repo/itv/
-          echo "Files copied to target repository"
+          if [ -d "$GITHUB_WORKSPACE/txt" ]; then
+            cp -v $GITHUB_WORKSPACE/txt/* target-repo/itv/
+          fi
+          ls -l target-repo/itv/  # Verify copied files
 
       - name: Commit and push to target repository
         run: |
@@ -78,11 +78,3 @@ jobs:
           git add itv/
           git commit -m "Update multicast source files"
           git push
-
-      - name: Trigger target repository workflow
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          repository: 168xb/jd
-          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          event-type: trigger-workflow
-          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
