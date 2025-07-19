@@ -1,8 +1,10 @@
 name: Update
 
 on:
-  schedule:
-    - cron: '50 1,10 * * *'
+  push:
+    paths:
+      - 'Code/**'  # Trigger when files in Code directory are pushed
+      - 'data/**'   # Or any other paths you want to monitor
   workflow_dispatch:
 
 jobs:
@@ -39,7 +41,7 @@ jobs:
             echo "Deleted .ip files from data folder"
           fi
           
-          # Delete .py files from Code folder (except main.py)
+          # Delete .py files from Code folder
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
             find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
             echo "Deleted .py files from Code folder"
