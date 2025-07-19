@@ -21,12 +21,39 @@ jobs:
       - name: Install dependencies
         run: pip install selenium requests futures eventlet aiohttp aiofiles asyncio
 
-      - name: Create directory
+      - name: Create directories
         run: |
           mkdir -p ${{ github.workspace }}/txt
+          mkdir -p ${{ github.workspace }}/data
+          mkdir -p ${{ github.workspace }}/Code
           echo "Directories created"
 
-      - name: Run cctv
+      - name: Checkout target repository
+        uses: actions/checkout@v3
+        with:
+          repository: 168xb/jd
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: target-repo
+
+      - name: Copy required files from target repository
+        run: |
+          # Copy jd.ip from target repo's data to current repo's data
+          if [ -f "target-repo/data/jd.ip" ]; then
+            cp target-repo/data/jd.ip $GITHUB_WORKSPACE/data/
+            echo "Copied jd.ip to data folder"
+          else
+            echo "Warning: target-repo/data/jd.ip not found"
+          fi
+          
+          # Copy main.py from target repo's Code to current repo's Code
+          if [ -f "target-repo/Code/main.py" ]; then
+            cp target-repo/Code/main.py $GITHUB_WORKSPACE/Code/
+            echo "Copied main.py to Code folder"
+          else
+            echo "Warning: target-repo/Code/main.py not found"
+          fi
+
+      - name: Run main.py
         run: |
           python ${{ github.workspace }}/Code/main.py
           ls -l  # Check the generated file
@@ -41,8 +68,8 @@ jobs:
           
           # Delete .py files from Code folder (except main.py)
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
-            echo "Deleted .py files from Code folder"
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -not -name "main.py" -type f -delete
+            echo "Deleted .py files from Code folder (except main.py)"
           fi
 
       - name: Commit cleanup changes to current repository
@@ -52,13 +79,6 @@ jobs:
           git add data/ Code/
           git commit -m "Update the file"
           git push
-
-      - name: Checkout target repository
-        uses: actions/checkout@v3
-        with:
-          repository: 168xb/jd
-          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          path: target-repo
 
       - name: Copy TXT files to target repository
         run: |
