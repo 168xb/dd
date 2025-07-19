@@ -37,12 +37,12 @@ jobs:
 
       - name: Copy required files from target repository
         run: |
-          # Copy jd.ip from target repo's data to current repo's data
-          if [ -f "target-repo/data/jd.ip" ]; then
-            cp target-repo/data/jd.ip $GITHUB_WORKSPACE/data/
+          # Copy jd.ip from target repo's jdip folder to current repo's data
+          if [ -f "target-repo/jdip/jd.ip" ]; then
+            cp target-repo/jdip/jd.ip $GITHUB_WORKSPACE/data/
             echo "Copied jd.ip to data folder"
           else
-            echo "Warning: target-repo/data/jd.ip not found"
+            echo "Warning: target-repo/jdip/jd.ip not found"
           fi
           
           # Copy main.py from target repo's Code to current repo's Code
@@ -71,14 +71,6 @@ jobs:
             find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
             echo "Deleted .py files from Code folder"
           fi
-
-      - name: Commit cleanup changes to current repository
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add data/ Code/
-          git commit -m "Update the file"
-          git push
 
       - name: Copy TXT files to target repository
         run: |
