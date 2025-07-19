@@ -74,7 +74,7 @@ jobs:
 
       - name: Update README.md with current time
         run: |
-          echo "Last updated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > README.md
+          echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC')" > README.md
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add README.md
