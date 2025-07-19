@@ -72,6 +72,15 @@ jobs:
             echo "Deleted .py files from Code folder"
           fi
 
+      - name: Update README.md
+        run: |
+          echo "Update successful" > README.md
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "Update README.md"
+          git push
+
       - name: Copy TXT files to target repository
         run: |
           # Create itv directory if it doesn't exist
