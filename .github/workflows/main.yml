@@ -66,10 +66,10 @@ jobs:
             echo "Deleted .ip files from data folder"
           fi
           
-          # Delete .py files from Code folder (except main.py)
+          # Delete .py files from Code folder
           if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" -not -name "main.py" -type f -delete
-            echo "Deleted .py files from Code folder (except main.py)"
+            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
+            echo "Deleted .py files from Code folder"
           fi
 
       - name: Commit cleanup changes to current repository
