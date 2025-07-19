@@ -1,80 +1,128 @@
-name: Update IP Sources
+name: IP Source Updater
 
 on:
   push:
     paths:
       - 'Code/**'
       - 'data/**'
+    branches: [ main, master ]  # 明确指定分支
   workflow_dispatch:
 
 jobs:
-  update:
+  update_sources:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source repository
+      # 第一步：调试输出（查看什么文件触发了工作流）
+      - name: Debug changed files
+        run: |
+          echo "GITHUB_SHA: $GITHUB_SHA"
+          echo "Changed files in this commit:"
+          git diff-tree --no-commit-id --name-only -r $GITHUB_SHA
+          echo "Current directory contents:"
+          ls -R
+
+      # 第二步：检出当前仓库
+      - name: Checkout source repo
         uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0  # 获取完整历史记录
+
+      # 第三步：设置Python环境
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12.3'
+          cache: 'pip'  # 启用pip缓存
 
+      # 第四步：安装依赖
       - name: Install dependencies
-        run: pip install selenium requests futures eventlet aiohttp aiofiles asyncio
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium requests futures eventlet aiohttp aiofiles asyncio
 
-      - name: Create output directory
+      # 第五步：准备目录结构
+      - name: Prepare directories
         run: |
           mkdir -p ${{ github.workspace }}/txt
-          echo "Output directory created"
+          echo "Directory structure:"
+          tree -L 3
 
-      - name: Run main script
+      # 第六步：运行主脚本
+      - name: Execute main script
         run: |
-          python ${{ github.workspace }}/Code/main.py
-          ls -l txt/  # Verify output files
-
-      - name: Clean up source files
-        run: |
-          # Delete .ip files from data folder
-          if [ -d "$GITHUB_WORKSPACE/data" ]; then
-            find "$GITHUB_WORKSPACE/data" -name "*.ip" -type f -delete
-            echo "Deleted .ip files from data folder"
+          if [ -f "$GITHUB_WORKSPACE/Code/main.py" ]; then
+            python $GITHUB_WORKSPACE/Code/main.py
+          else
+            echo "Error: main.py not found!"
+            exit 1
           fi
-          
-          # Delete .py files from Code folder
-          if [ -d "$GITHUB_WORKSPACE/Code" ]; then
-            find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -delete
-            echo "Deleted .py files from Code folder"
-          fi
+          echo "Generated files:"
+          ls -lh txt/
 
-      - name: Commit source repository changes
+      # 第七步：清理源文件
+      - name: Clean source files
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          echo "Cleaning source files..."
+          find "$GITHUB_WORKSPACE/data" -name "*.ip" -type f -print -delete
+          find "$GITHUB_WORKSPACE/Code" -name "*.py" -type f -print -delete
+          echo "Remaining files:"
+          find "$GITHUB_WORKSPACE/data" -type f
+          find "$GITHUB_WORKSPACE/Code" -type f
+
+      # 第八步：提交源仓库变更
+      - name: Commit source changes
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
           git add .
-          git commit -m "🔄 Update IP [skip ci]"
-          git push
+          if git diff-index --quiet HEAD --; then
+            echo "No changes to commit"
+          else
+            git commit -m "🔄 Update IP [skip ci]"
+            git push
+          fi
 
-      - name: Checkout target repository
+      # 第九步：检出目标仓库
+      - name: Checkout target repo
         uses: actions/checkout@v4
         with:
           repository: 168xb/jd
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          path: target-repo
+          path: target_repo
+          clean: false
 
-      - name: Copy output files to target repository
+      # 第十步：复制文件到目标仓库
+      - name: Copy to target repo
         run: |
-          mkdir -p target-repo/itv
-          if [ -d "$GITHUB_WORKSPACE/txt" ]; then
-            cp -v $GITHUB_WORKSPACE/txt/* target-repo/itv/
+          echo "Copying files to target repo..."
+          mkdir -p target_repo/itv
+          if ls txt/*.txt 1> /dev/null 2>&1; then
+            cp -v txt/*.txt target_repo/itv/
+          else
+            echo "No .txt files found to copy"
+            exit 1
           fi
-          ls -l target-repo/itv/  # Verify copied files
 
-      - name: Commit and push to target repository
+      # 第十一步：提交目标仓库变更
+      - name: Commit target changes
         run: |
-          cd target-repo
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          cd target_repo
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
           git add itv/
-          git commit -m "Update multicast source files"
-          git push
+          if git diff-index --quiet HEAD --; then
+            echo "No changes in target repo"
+          else
+            git commit -m "Update IP sources (automated)"
+            git push
+          fi
+
+      # 第十二步：最终状态报告
+      - name: Final report
+        run: |
+          echo "Workflow completed successfully"
+          echo "Source repo changes:"
+          git -C $GITHUB_WORKSPACE log -1 --oneline
+          echo "Target repo changes:"
+          git -C target_repo log -1 --oneline
