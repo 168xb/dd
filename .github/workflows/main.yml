@@ -78,3 +78,11 @@ jobs:
           git add itv/
           git commit -m "Update multicast source files"
           git push
+
+      - name: Trigger target repository workflow
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          repository: 168xb/jd
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          event-type: trigger-workflow
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
