@@ -119,7 +119,7 @@ def save_results(results):
     results.sort(key=lambda x: channel_key(x[0]))
     
     # 保存分类频道列表
-    with open("tv/gxtv.txt", 'w', encoding='utf-8') as file:
+    with open("txt/gxtv.txt", 'w', encoding='utf-8') as file:
         # 央视频道
         file.write('央视频道,#genre#\n')
         cctv_counter = defaultdict(int)
@@ -150,7 +150,7 @@ def save_results(results):
 def main():
     results = []
     urls_all = []
-    with open('光迅.ip', 'r', encoding='utf-8') as file:
+    with open('data/jdgx.ip', 'r', encoding='utf-8') as file:
         lines = file.readlines()
         for line in lines:
             url = line.strip()
