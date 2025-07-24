@@ -17,7 +17,8 @@ from collections import defaultdict
 CONFIG = {
     'timeout': 1.5,  # 基本超时时间
     'max_workers': 15,  # 工作线程数
-    'min_speed': 0.01,  # 最低速度限制(MB/s)
+    'result_counter': 8,  # 每个频道最大保留结果数
+    'min_speed': 0.001,  # 最低速度限制(MB/s)
     'max_speed': 100,    # 最高速度限制(MB/s)
 }
 
@@ -227,21 +228,30 @@ def save_results(results):
     with open("txt/gxtv.txt", 'w', encoding='utf-8') as file:
         # 央视频道
         file.write('央视频道,#genre#\n')
+        cctv_counter = defaultdict(int)
         for name, url, _ in results:
             if 'CCTV' in name:
-                file.write(f"{name},{url}\n")
+                if cctv_counter[name] < CONFIG['result_counter']:
+                    file.write(f"{name},{url}\n")
+                    cctv_counter[name] += 1
         
         # 卫视频道
         file.write('\n卫视频道,#genre#\n')
+        ws_counter = defaultdict(int)
         for name, url, _ in results:
             if '卫视' in name and 'CCTV' not in name:
-                file.write(f"{name},{url}\n")
+                if ws_counter[name] < CONFIG['result_counter']:
+                    file.write(f"{name},{url}\n")
+                    ws_counter[name] += 1
         
         # 其他频道
         file.write('\n其他频道,#genre#\n')
+        other_counter = defaultdict(int)
         for name, url, _ in results:
             if 'CCTV' not in name and '卫视' not in name and '测试' not in name:
-                file.write(f"{name},{url}\n")
+                if other_counter[name] < CONFIG['result_counter']:
+                    file.write(f"{name},{url}\n")
+                    other_counter[name] += 1
 
 def main():
     results = []
