@@ -1,0 +1,39 @@
+name: 光迅酒店更新
+on:
+  schedule:
+    - cron: '30 23,11 * * *'  
+  workflow_dispatch:
+      
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0    
+    
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install dependencies
+        run: |
+          pip install selenium requests futures eventlet
+
+      - name: run iptvpy
+        run: |
+          cd $GITHUB_WORKSPACE
+          python Code/gxmain.py
+     
+      - name: 提交更改
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "更新直播源"
+          # 先拉取远程更改，使用递归策略合并
+          git pull --rebase
+          git push
