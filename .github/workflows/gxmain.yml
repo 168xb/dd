@@ -20,8 +20,7 @@ jobs:
           python-version: 3.x
 
       - name: Install dependencies
-        run: |
-          pip install selenium requests futures eventlet
+        run: pip install selenium requests futures eventlet aiohttp aiofiles asyncio
 
       - name: run iptvpy
         run: |
