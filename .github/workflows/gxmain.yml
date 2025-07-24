@@ -33,7 +33,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git commit -m "更新直播源"
+          git commit -m "更新光迅源"
           # 先拉取远程更改，使用递归策略合并
           git pull --rebase
           git push
