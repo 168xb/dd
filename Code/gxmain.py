@@ -17,7 +17,7 @@ from collections import defaultdict
 CONFIG = {
     'timeout': 1.5,  # 基本超时时间
     'max_workers': 15,  # 工作线程数
-    'min_speed': 0.05,  # 最低速度限制(MB/s)
+    'min_speed': 0.01,  # 最低速度限制(MB/s)
     'max_speed': 100,    # 最高速度限制(MB/s)
 }
 
